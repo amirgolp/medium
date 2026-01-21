@@ -21,7 +21,7 @@ except ImportError:
 
 from tensorflow import keras
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Conv1D, MaxPooling1D, Dropout, LSTM
+from tensorflow.keras.layers import Dense, Conv1D, MaxPooling1D, Dropout, LSTM, Input
 from tensorflow.keras.metrics import RootMeanSquaredError
 from tensorflow.keras.callbacks import EarlyStopping
 from sklearn.preprocessing import MinMaxScaler
@@ -152,7 +152,7 @@ class ModelTrainer:
         close_prices = base_price + trend + noise.cumsum()
 
         df = pd.DataFrame({
-            'time': pd.date_range(end=datetime.now(), periods=n_bars, freq='H'),
+            'time': pd.date_range(end=datetime.now(), periods=n_bars, freq='h'),
             'open': close_prices + np.random.normal(0, 0.0001, n_bars),
             'high': close_prices + np.abs(np.random.normal(0, 0.0002, n_bars)),
             'low': close_prices - np.abs(np.random.normal(0, 0.0002, n_bars)),
@@ -170,12 +170,12 @@ class ModelTrainer:
             Compiled Keras model
         """
         model = Sequential([
+            Input(shape=(self.history_size, 1)),
             Conv1D(
                 filters=256,
                 kernel_size=2,
                 activation='relu',
-                padding='same',
-                input_shape=(self.history_size, 1)
+                padding='same'
             ),
             MaxPooling1D(pool_size=2),
             LSTM(100, return_sequences=True),

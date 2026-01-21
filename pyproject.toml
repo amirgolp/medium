@@ -27,7 +27,7 @@ classifiers = [
 keywords = ["trading", "forex", "machine-learning", "sentiment-analysis", "backtesting"]
 
 dependencies = [
-    "numpy>=1.21.0",
+    "numpy>=1.21.0,<2.0.0",
     "pandas>=1.3.0",
     "scikit-learn>=1.0.0",
     "tensorflow>=2.10.0",
@@ -37,6 +37,9 @@ dependencies = [
     "requests>=2.28.0",
     "matplotlib>=3.5.0",
     "seaborn>=0.12.0",
+    "yfinance>=0.2.0",
+    "streamlit>=1.28.0",
+    "plotly>=5.17.0",
 ]
 
 [project.optional-dependencies]
@@ -72,8 +75,8 @@ packages = ["trading_system"]
 trading_system = ["py.typed"]
 
 # UV Configuration
-[tool.uv]
-dev-dependencies = [
+[dependency-groups]
+dev = [
     "pytest>=7.0.0",
     "pytest-cov>=3.0.0",
     "black>=22.0.0",
@@ -263,11 +266,51 @@ cmd = "python trading_system/examples/run_backtest.py"
 help = "Run combined strategy backtest example"
 cmd = "python trading_system/examples/backtest_combined_strategy.py"
 
+[tool.poe.tasks.compare]
+help = "Compare multiple strategies (Usage: poe compare [--symbol EURUSD] [--days 90])"
+cmd = "python trading_system/examples/compare_strategies.py"
+args = [
+    { name = "symbol", default = "EURUSD", help = "Trading symbol" },
+    { name = "days", default = "90", help = "Days to backtest" }
+]
+
+[tool.poe.tasks.example-compare]
+help = "Run strategy comparison example"
+cmd = "python trading_system/examples/compare_strategies.py"
+
+[tool.poe.tasks.validate]
+help = "Validate all models and check if retraining needed"
+cmd = "python trading_system/examples/validate_models.py"
+
+[tool.poe.tasks.train-all]
+help = "Train models for multiple currency pairs"
+cmd = "./scripts/train_all_pairs.sh"
+
+[tool.poe.tasks.signal]
+help = "Get live trading signal (Usage: poe signal [--symbol EURUSD] [--strategy hybrid])"
+cmd = "python trading_system/examples/get_live_signal.py --symbol ${symbol} --strategy ${strategy}"
+args = [
+    { name = "symbol", default = "EURUSD", help = "Trading symbol (EURUSD, XAUUSD, CL, etc.)" },
+    { name = "strategy", default = "hybrid", help = "Strategy: ml, pattern, or hybrid" }
+]
+
+[tool.poe.tasks.monitor]
+help = "Monitor symbols continuously (Usage: poe monitor [--symbols EURUSD,GBPUSD,XAUUSD])"
+cmd = "python trading_system/examples/get_live_signal.py --monitor --symbols ${symbols} --interval ${interval}"
+args = [
+    { name = "symbols", default = "EURUSD,GBPUSD,XAUUSD", help = "Comma-separated symbols" },
+    { name = "interval", default = "60", help = "Check interval in minutes" }
+]
+
+[tool.poe.tasks.app]
+help = "Launch Streamlit web dashboard"
+cmd = "streamlit run app.py"
+
 [tool.poe.tasks.examples]
 help = "Run all example scripts"
 sequence = [
     "example-train",
-    "example-predict", 
+    "example-predict",
     "example-backtest"
 ]
 

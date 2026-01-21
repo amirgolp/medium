@@ -49,6 +49,8 @@ class Trade:
 
     def close_trade(self, exit_time: datetime, exit_price: float, reason: str):
         """Close the trade and calculate results."""
+        from ..ml_predictor.correlations import get_commodity_spec
+
         self.exit_time = exit_time
         self.exit_price = exit_price
         self.exit_reason = reason
@@ -56,17 +58,32 @@ class Trade:
         # Calculate duration
         self.duration_hours = (exit_time - self.entry_time).total_seconds() / 3600.0
 
-        # Calculate pips
-        pip_value = 0.0001 if "JPY" not in self.symbol else 0.01
+        # Get commodity specs if applicable
+        commodity_spec = get_commodity_spec(self.symbol)
 
-        if self.direction == "BUY":
-            self.pips = (exit_price - self.entry_price) / pip_value
-        else:  # SELL
-            self.pips = (self.entry_price - exit_price) / pip_value
+        if commodity_spec:
+            # Commodity P&L calculation
+            tick_size = commodity_spec['tick_size']
+            tick_value = commodity_spec['tick_value']
 
-        # Calculate P&L (simplified - actual would need tick value)
-        # Assuming 1 lot = $10 per pip for major pairs
-        self.profit_loss = self.pips * 10.0 * self.lot_size
+            price_change = self.exit_price - self.entry_price if self.direction == "BUY" else self.entry_price - self.exit_price
+            ticks = price_change / tick_size
+            self.pips = ticks  # Store as ticks for commodities
+
+            # P&L = ticks * tick_value * lot_size
+            self.profit_loss = ticks * tick_value * self.lot_size
+        else:
+            # Forex P&L calculation
+            pip_value = 0.0001 if "JPY" not in self.symbol else 0.01
+
+            if self.direction == "BUY":
+                self.pips = (self.exit_price - self.entry_price) / pip_value
+            else:  # SELL
+                self.pips = (self.entry_price - self.exit_price) / pip_value
+
+            # Assuming 1 lot = $10 per pip for major pairs
+            self.profit_loss = self.pips * 10.0 * self.lot_size
+
         self.profit_loss_pct = (self.profit_loss / 10000.0) * 100  # Assuming $10k account
 
 
@@ -346,7 +363,7 @@ class BacktestEngine:
         np.random.seed(42)
         base_price = 1.1000 if "EUR" in symbol else 1.3000
 
-        dates = pd.date_range(start=start_date, periods=hours, freq='H')
+        dates = pd.date_range(start=start_date, periods=hours, freq='h')
 
         # Generate realistic price movement
         returns = np.random.normal(0, 0.0002, hours)

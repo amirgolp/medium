@@ -1,7 +1,12 @@
 {
   "permissions": {
     "allow": [
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(source:*)",
+      "Bash(python:*)",
+      "Bash(ls:*)",
+      "Read(//home/peltor/workspace/test/**)",
+      "Bash(uv pip install:*)"
     ]
   }
 }

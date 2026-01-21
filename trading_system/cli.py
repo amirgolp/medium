@@ -177,7 +177,7 @@ def backtest_command(args):
 
     # Simple strategy function
     def simple_strategy(data, i, predictor=None, symbol=None):
-        if i < 120:
+        if i < 200:  # Need 200 bars for MA filter
             return None
 
         # Get recent prices
@@ -191,6 +191,22 @@ def backtest_command(args):
 
                 if signal == "NEUTRAL":
                     return None
+
+                # Trend filter: Check 200-period MA
+                ma_200 = np.mean(data.iloc[i-200:i]['close'].values)
+                current_price = data.iloc[i]['close']
+
+                # Don't trade against major trend
+                if signal == "BUY" and current_price < ma_200:
+                    return None  # Don't buy in downtrend
+                if signal == "SELL" and current_price > ma_200:
+                    return None  # Don't sell in uptrend
+
+                # Time filter: Only trade during high liquidity (11:00-22:00 GMT)
+                bar_time = data.iloc[i]['time']
+                trade_hour = bar_time.hour
+                if trade_hour < 11 or trade_hour >= 22:
+                    return None  # Outside trading hours
 
                 # Calculate ATR for stops
                 highs = data.iloc[i-14:i]['high'].values
@@ -207,17 +223,22 @@ def backtest_command(args):
 
                 current_price = data.iloc[i]['close']
 
+                # Optimized risk/reward: 1:2 ratio (SL=2.0 ATR, TP=4.0 ATR)
+                # With trailing stop at 1.0 ATR
                 if signal == "BUY":
-                    sl = current_price - (atr * 2.5)
-                    tp = current_price + (atr * 3.0)
+                    sl = current_price - (atr * 2.0)
+                    tp = current_price + (atr * 4.0)
+                    trailing = atr * 1.0
                 else:
-                    sl = current_price + (atr * 2.5)
-                    tp = current_price - (atr * 3.0)
+                    sl = current_price + (atr * 2.0)
+                    tp = current_price - (atr * 4.0)
+                    trailing = atr * 1.0
 
                 return {
                     'signal': signal,
                     'stop_loss': sl,
                     'take_profit': tp,
+                    'trailing_stop': trailing,
                     'lot_size': 0.1,
                     'ml_signal': signal
                 }
