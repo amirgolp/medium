@@ -1,0 +1,30 @@
+# UV ignore file - files to exclude from UV operations
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Cache
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Models and data
+models/
+data/
+backtest_results/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
