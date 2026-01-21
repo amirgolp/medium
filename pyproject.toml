@@ -50,6 +50,7 @@ dev = [
     "flake8>=4.0.0",
     "mypy>=0.950",
     "ruff>=0.1.0",
+    "poethepoet>=0.24.0",
 ]
 all = [
     "trading-system[mt5,dev]",
@@ -77,6 +78,7 @@ dev-dependencies = [
     "pytest-cov>=3.0.0",
     "black>=22.0.0",
     "ruff>=0.1.0",
+    "poethepoet>=0.24.0",
 ]
 
 # Black Configuration
@@ -138,3 +140,191 @@ warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = false
 ignore_missing_imports = true
+
+# =============================================================================
+# Poethepoet Task Runner Configuration
+# =============================================================================
+# Run tasks with: poe <task-name>
+# List all tasks: poe
+# Get help: poe --help
+
+[tool.poe.tasks]
+# Help and information
+help = { cmd = "poe --help", help = "Show available tasks" }
+
+# =============================================================================
+# Setup and Installation
+# =============================================================================
+[tool.poe.tasks.install]
+help = "Install package with core dependencies"
+cmd = "uv pip install -e ."
+
+[tool.poe.tasks.install-dev]
+help = "Install package with development dependencies"
+cmd = "uv pip install -e '.[dev]'"
+
+[tool.poe.tasks.install-all]
+help = "Install package with all dependencies (dev + mt5)"
+cmd = "uv pip install -e '.[all]'"
+
+# =============================================================================
+# Development Tools
+# =============================================================================
+[tool.poe.tasks.format]
+help = "Format code with black"
+cmd = "black trading_system/"
+
+[tool.poe.tasks.lint]
+help = "Lint code with ruff"
+cmd = "ruff check trading_system/"
+
+[tool.poe.tasks.lint-fix]
+help = "Fix linting issues automatically"
+cmd = "ruff check trading_system/ --fix"
+
+[tool.poe.tasks.type-check]
+help = "Run type checking with mypy"
+cmd = "mypy trading_system/"
+
+[tool.poe.tasks.test]
+help = "Run tests with pytest"
+cmd = "pytest tests/ -v"
+
+[tool.poe.tasks.test-cov]
+help = "Run tests with coverage report"
+cmd = "pytest tests/ -v --cov=trading_system --cov-report=html"
+
+[tool.poe.tasks.clean]
+help = "Remove build artifacts and cache files"
+shell = """
+rm -rf build/ dist/ *.egg-info .pytest_cache .coverage htmlcov/ &&
+find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true &&
+find . -type f -name "*.pyc" -delete
+"""
+
+# =============================================================================
+# Trading Operations (with parameters)
+# =============================================================================
+[tool.poe.tasks.train]
+help = "Train ML models (Usage: poe train [--symbol EURUSD] [--epochs 100])"
+cmd = "python -m trading_system train --symbols ${symbol} --epochs ${epochs}"
+args = [
+    { name = "symbol", default = "EURUSD", help = "Trading symbol(s)" },
+    { name = "epochs", default = "100", help = "Number of training epochs" }
+]
+
+[tool.poe.tasks.predict]
+help = "Make price predictions (Usage: poe predict [--symbol EURUSD])"
+cmd = "python -m trading_system predict --symbol ${symbol}"
+args = [
+    { name = "symbol", default = "EURUSD", help = "Trading symbol" }
+]
+
+[tool.poe.tasks.sentiment]
+help = "Analyze news sentiment (Usage: poe sentiment [--pair EURUSD])"
+cmd = "python -m trading_system sentiment --pair ${pair}"
+args = [
+    { name = "pair", default = "EURUSD", help = "Currency pair" }
+]
+
+[tool.poe.tasks.backtest]
+help = "Run backtest with visualization (Usage: poe backtest [--symbol EURUSD] [--days 90])"
+cmd = "python -m trading_system backtest --symbol ${symbol} --days ${days} --balance ${balance} --visualize --save-charts"
+args = [
+    { name = "symbol", default = "EURUSD", help = "Trading symbol" },
+    { name = "days", default = "90", help = "Days to backtest" },
+    { name = "balance", default = "10000", help = "Initial balance" }
+]
+
+# =============================================================================
+# Example Scripts
+# =============================================================================
+[tool.poe.tasks.example-train]
+help = "Run training example script"
+cmd = "python trading_system/examples/train_models.py"
+
+[tool.poe.tasks.example-predict]
+help = "Run prediction example script"
+cmd = "python trading_system/examples/predict_forex.py"
+
+[tool.poe.tasks.example-sentiment]
+help = "Run sentiment analysis example script"
+cmd = "python trading_system/examples/analyze_sentiment.py"
+
+[tool.poe.tasks.example-strategy]
+help = "Run complete trading strategy example"
+cmd = "python trading_system/examples/complete_trading_strategy.py"
+
+[tool.poe.tasks.example-backtest]
+help = "Run backtest example script"
+cmd = "python trading_system/examples/run_backtest.py"
+
+[tool.poe.tasks.example-combined]
+help = "Run combined strategy backtest example"
+cmd = "python trading_system/examples/backtest_combined_strategy.py"
+
+[tool.poe.tasks.examples]
+help = "Run all example scripts"
+sequence = [
+    "example-train",
+    "example-predict", 
+    "example-backtest"
+]
+
+# =============================================================================
+# Composite Tasks
+# =============================================================================
+[tool.poe.tasks.check]
+help = "Run all code quality checks (format, lint, type-check, test)"
+sequence = ["format", "lint", "type-check", "test"]
+
+[tool.poe.tasks.quick-start]
+help = "Quick start: install dev deps, train model, run backtest"
+sequence = ["install-dev", "train", "backtest"]
+
+[tool.poe.tasks.full-workflow]
+help = "Full workflow: clean, install, train, backtest"
+sequence = ["clean", "install-dev", "train", "backtest"]
+
+# =============================================================================
+# Build and Distribution
+# =============================================================================
+[tool.poe.tasks.build]
+help = "Build distribution packages"
+cmd = "python -m build"
+
+[tool.poe.tasks.publish-test]
+help = "Publish to TestPyPI"
+cmd = "python -m twine upload --repository testpypi dist/*"
+
+[tool.poe.tasks.publish]
+help = "Publish to PyPI"
+cmd = "python -m twine upload dist/*"
+
+# =============================================================================
+# Documentation
+# =============================================================================
+[tool.poe.tasks.docs]
+help = "List all available documentation files"
+shell = "ls -1 *.md"
+
+# =============================================================================
+# Utility Tasks
+# =============================================================================
+[tool.poe.tasks.version]
+help = "Show package version"
+script = "trading_system:__version__"
+
+[tool.poe.tasks.info]
+help = "Show project information"
+shell = """
+echo "📦 Trading System v1.0.0"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "🐍 Python: $(python --version)"
+echo "📍 Location: $(pwd)"
+echo "📊 Package: $(python -c 'import trading_system; print(trading_system.__version__)')"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+echo "Available commands: Run 'poe' to see all tasks"
+"""
+
